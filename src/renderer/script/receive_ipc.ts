@@ -3,6 +3,7 @@ import {
   IMainToRenderer,
   OnCallRendererInternalType,
 } from "../../common/main_to_renderer";
+import { callMain } from "./send_ipc";
 
 declare global {
   interface Window {
@@ -27,8 +28,23 @@ export function setupReceiveIpc() {
   window.onCallRendererInternal(handleCallRenderer);
 }
 
+let signalCloseHandler: (() => Promise<void>) | null = null;
+export function onSignalClose(handler: () => Promise<void>): void {
+  signalCloseHandler = handler;
+}
+
 const mainToRenderer: IMainToRenderer = {
-  tick: function (time: number, hello: string): void {
-    console.log("tick " + time + ": " + hello);
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  signalClose: async function (): Promise<void> {
+    if (signalCloseHandler) {
+      try {
+        await signalCloseHandler();
+      } finally {
+        await callMain("readyToClose");
+      }
+    }
   },
+  // tick: function (time: number, hello: string): void {
+  //   console.log("tick " + time + ": " + hello);
+  // },
 };

@@ -1,11 +1,11 @@
+import CopyWebpackPlugin from "copy-webpack-plugin";
 import * as path from "path";
 import * as webpack from "webpack";
-import CopyWebpackPlugin from "copy-webpack-plugin";
 
 const config: webpack.Configuration = {
   mode: "development",
   entry: "./src/renderer/script/renderer.ts",
-  target: "electron-renderer",
+  target: "web",
   output: {
     filename: "renderer.js",
     path: path.resolve(__dirname, "build/renderer"),
@@ -30,6 +30,10 @@ const config: webpack.Configuration = {
         test: /\.js$/,
         enforce: "pre",
         use: ["source-map-loader"],
+      },
+      {
+        test: /\.css$/,
+        use: ["style-loader", "css-loader"],
       },
     ],
   },

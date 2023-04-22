@@ -5,10 +5,11 @@ interface AllPromises {
 
 /** All return types must be Promises (enforced by `extends AllPromises`). */
 export interface IRendererToMain extends AllPromises {
-  // TODO: replace with your renderer->main methods, implemented in
-  // main/receive_ipc.ts.
-  echo(val: string): Promise<string>;
-  move(x: number, y: number): Promise<void>;
+  readAll(): Promise<string[]>;
+  write(file: string, data: string): Promise<void>;
+  readyToClose(): Promise<void>;
+  // echo(val: string): Promise<string>;
+  // move(x: number, y: number): Promise<void>;
 }
 
 export type CallMainInternalType = <K extends keyof IRendererToMain & string>(

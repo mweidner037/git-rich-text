@@ -1,5 +1,6 @@
-import { IpcMainInvokeEvent } from "electron";
+import { app, IpcMainInvokeEvent } from "electron";
 import { IRendererToMain } from "../common/renderer_to_main";
+import { readAll, write } from "./files";
 
 export function handleCallMain<K extends keyof IRendererToMain & string>(
   _event: IpcMainInvokeEvent,
@@ -15,11 +16,14 @@ export function handleCallMain<K extends keyof IRendererToMain & string>(
 }
 
 const rendererToMain: IRendererToMain = {
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async echo(val: string) {
-    return "You said: " + val;
+  readAll: function (): Promise<string[]> {
+    return readAll();
   },
-  async move(x: number, y: number) {
-    // TODO
+  write: function (file: string, data: string): Promise<void> {
+    return write(file, data);
+  },
+  // eslint-disable-next-line @typescript-eslint/require-await
+  readyToClose: async function (): Promise<void> {
+    app.quit();
   },
 };
