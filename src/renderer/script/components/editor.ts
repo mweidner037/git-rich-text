@@ -5,7 +5,6 @@ import Quill, { Delta as DeltaType, DeltaStatic } from "quill";
 import "quill/dist/quill.snow.css";
 import { onFileChange, onSignalClose } from "../ipc/receive_ipc";
 import { callMain } from "../ipc/send_ipc";
-import { getDeviceID } from "./device_id";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const Delta: typeof DeltaType = Quill.import("delta");
@@ -21,6 +20,8 @@ const noGrowAtEnd = [
   "list",
   "indent",
 ];
+
+const SAVE_INTERVAL = 5000;
 
 class QuillDoc extends collabs.AbstractDoc {
   readonly text: collabs.CRichText;
@@ -41,16 +42,7 @@ function makeInitialSave(): Uint8Array {
   return doc.save();
 }
 
-interface SavedState {
-  info: string;
-  version: string;
-  deviceID: string;
-  data: string;
-}
-
-export function setupEditor(savedStates: string[]) {
-  const deviceID = getDeviceID();
-
+export function setupEditor(initialContents: [savedState: Uint8Array][]) {
   const doc = new QuillDoc();
   // "Set the initial state"
   // (a single "\n", required by Quill) by
@@ -88,20 +80,8 @@ export function setupEditor(savedStates: string[]) {
   });
 
   // Load the initial state.
-  function loadOne(savedState: string): void {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const decoded: SavedState = JSON.parse(savedState);
-      doc.load(collabs.Bytes.parse(decoded.data));
-      console.log("Loaded", decoded.deviceID);
-    } catch (err) {
-      console.error(err);
-      // Assume it was in the middle of writing or something; ignore.
-    }
-  }
-
-  for (const savedState of savedStates) {
-    loadOne(savedState);
+  for (const [savedState] of initialContents) {
+    doc.load(savedState);
   }
 
   // Display loaded state by syncing it to Quill.
@@ -124,18 +104,8 @@ export function setupEditor(savedStates: string[]) {
   async function save() {
     if (savePending) {
       savePending = false;
-      console.log(`Saving to ${deviceID}.json...`);
-      const savedState: SavedState = {
-        info: "fileshare rich-text-demo save file",
-        version: "0.0.0",
-        deviceID,
-        data: collabs.Bytes.stringify(doc.save()),
-      };
-      await callMain(
-        "write",
-        `${deviceID}.json`,
-        JSON.stringify(savedState, undefined, 2)
-      );
+      console.log(`Saving...`);
+      await callMain("write", doc.save());
       console.log("Saved.");
     }
   }
@@ -146,7 +116,7 @@ export function setupEditor(savedStates: string[]) {
     if (!savePending) {
       savePending = true;
       // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      setTimeout(save, 5000);
+      setTimeout(save, SAVE_INTERVAL);
     }
   });
   onSignalClose(save);
@@ -181,7 +151,7 @@ export function setupEditor(savedStates: string[]) {
   });
 
   // Load files that change (presumably due to collaborators).
-  onFileChange(loadOne);
+  onFileChange((savedState) => doc.load(savedState));
 
   // Convert user inputs to Collab operations.
 
@@ -260,5 +230,4 @@ export function setupEditor(savedStates: string[]) {
   });
 
   // Ready.
-  // TODO: display
 }

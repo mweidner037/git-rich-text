@@ -33,8 +33,8 @@ export function onSignalClose(handler: () => Promise<void>): void {
   signalCloseHandler = handler;
 }
 
-let fileChangeHandler: ((data: string) => void) | null = null;
-export function onFileChange(handler: (data: string) => void): void {
+let fileChangeHandler: ((savedState: Uint8Array) => void) | null = null;
+export function onFileChange(handler: (savedState: Uint8Array) => void): void {
   fileChangeHandler = handler;
 }
 
@@ -49,7 +49,7 @@ const mainToRenderer: IMainToRenderer = {
       }
     }
   },
-  onFileChange: function (data: string): void {
-    if (fileChangeHandler) fileChangeHandler(data);
+  onFileChange: function (savedState: Uint8Array): void {
+    if (fileChangeHandler) fileChangeHandler(savedState);
   },
 };

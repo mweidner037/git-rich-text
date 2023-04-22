@@ -5,8 +5,8 @@ import { callMain } from "./ipc/send_ipc";
 setupReceiveIpc();
 
 void (async function () {
-  const savedStates = await callMain("readAll");
-  setupEditor(savedStates);
+  const initialContents = await callMain("readInitial");
+  setupEditor(initialContents);
 
   // console.log("hello from renderer process");
   // const response = await callMain("echo", "test message");

@@ -1,6 +1,6 @@
 import { app, IpcMainInvokeEvent } from "electron";
 import { IRendererToMain } from "../../common/renderer_to_main";
-import { readAll, write } from "../files";
+import { readInitial, write } from "../files";
 
 export function handleCallMain<K extends keyof IRendererToMain & string>(
   _event: IpcMainInvokeEvent,
@@ -15,15 +15,14 @@ export function handleCallMain<K extends keyof IRendererToMain & string>(
   return method(...args);
 }
 
+// TODO: move elsewhere. Can't put in main.ts b/c circular dep.
+// eslint-disable-next-line @typescript-eslint/require-await
+async function readyToClose(): Promise<void> {
+  app.quit();
+}
+
 const rendererToMain: IRendererToMain = {
-  readAll: function (): Promise<string[]> {
-    return readAll();
-  },
-  write: function (file: string, data: string): Promise<void> {
-    return write(file, data);
-  },
-  // eslint-disable-next-line @typescript-eslint/require-await
-  readyToClose: async function (): Promise<void> {
-    app.quit();
-  },
+  readInitial,
+  write,
+  readyToClose,
 };

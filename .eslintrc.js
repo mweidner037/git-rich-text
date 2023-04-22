@@ -31,8 +31,6 @@ module.exports = {
     "@typescript-eslint/no-non-null-assertion": "off",
     // Disallow default exports; only allow named exports.
     "import/no-default-export": "error",
-    // Impose alphabetically ordered imports.
-    "import/order": "error",
     "@typescript-eslint/no-unused-vars": [
       "warn",
       {

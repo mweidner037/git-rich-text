@@ -6,10 +6,15 @@ import { IpcRendererEvent } from "electron";
  * since main->renderer communication is 1-way by default.
  */
 export interface IMainToRenderer {
+  /**
+   * Called when the app is about to close.
+   *
+   * Triggers a final save (if needed) and then calls
+   * IRendererToMain.readyToClose().
+   */
   signalClose(): void;
   /** Not called for files we wrote ourselves. */
-  onFileChange(data: string): void;
-  // tick(time: number, hello: string): void;
+  onFileChange(savedState: Uint8Array): void;
 }
 
 export type OnCallRendererInternalType = (

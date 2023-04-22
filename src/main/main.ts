@@ -18,23 +18,18 @@ const createWindow = () => {
   // On close, inform the window so it can save, and wait
   // for it to finish saving before quitting.
   let sentCloseSignal = false;
-  win.on("close", (e) => {
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  win.on("close", async (e) => {
     if (!sentCloseSignal) {
       sentCloseSignal = true;
       e.preventDefault();
-      stopFileWatch();
+      await stopFileWatch();
       callRenderer("signalClose");
     }
   });
 };
 
-// app.on("window-all-closed", () => {
-//   app.quit();
-// });
-
 void app.whenReady().then(() => {
   ipcMain.handle("callMain", handleCallMain);
   createWindow();
-
-  // setTimeout(() => callRenderer("tick", Date.now(), "from main"), 1000);
 });

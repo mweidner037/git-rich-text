@@ -5,11 +5,10 @@ interface AllPromises {
 
 /** All return types must be Promises (enforced by `extends AllPromises`). */
 export interface IRendererToMain extends AllPromises {
-  readAll(): Promise<string[]>;
-  write(file: string, data: string): Promise<void>;
+  /** Reads the initial state and watches for future changes. */
+  readInitial(): Promise<[savedState: Uint8Array][]>;
+  write(savedState: Uint8Array): Promise<void>;
   readyToClose(): Promise<void>;
-  // echo(val: string): Promise<string>;
-  // move(x: number, y: number): Promise<void>;
 }
 
 export type CallMainInternalType = <K extends keyof IRendererToMain & string>(
