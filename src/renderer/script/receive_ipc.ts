@@ -33,6 +33,11 @@ export function onSignalClose(handler: () => Promise<void>): void {
   signalCloseHandler = handler;
 }
 
+let fileChangeHandler: ((data: string) => void) | null = null;
+export function onFileChange(handler: (data: string) => void): void {
+  fileChangeHandler = handler;
+}
+
 const mainToRenderer: IMainToRenderer = {
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   signalClose: async function (): Promise<void> {
@@ -44,7 +49,7 @@ const mainToRenderer: IMainToRenderer = {
       }
     }
   },
-  // tick: function (time: number, hello: string): void {
-  //   console.log("tick " + time + ": " + hello);
-  // },
+  onFileChange: function (data: string): void {
+    if (fileChangeHandler) fileChangeHandler(data);
+  },
 };

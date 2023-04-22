@@ -3,7 +3,7 @@ import Quill, { Delta as DeltaType, DeltaStatic } from "quill";
 
 // Include CSS
 import "quill/dist/quill.snow.css";
-import { onSignalClose } from "../receive_ipc";
+import { onFileChange, onSignalClose } from "../receive_ipc";
 import { callMain } from "../send_ipc";
 import { getDeviceID } from "./device_id";
 
@@ -88,7 +88,7 @@ export function setupEditor(savedStates: string[]) {
   });
 
   // Load the initial state.
-  for (const savedState of savedStates) {
+  function loadOne(savedState: string): void {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const decoded: SavedState = JSON.parse(savedState);
@@ -98,6 +98,10 @@ export function setupEditor(savedStates: string[]) {
       console.error(err);
       // Assume it was in the middle of writing or something; ignore.
     }
+  }
+
+  for (const savedState of savedStates) {
+    loadOne(savedState);
   }
 
   // Display loaded state by syncing it to Quill.
@@ -175,6 +179,9 @@ export function setupEditor(savedStates: string[]) {
       })
     );
   });
+
+  // Load files that change (presumably due to collaborators).
+  onFileChange(loadOne);
 
   // Convert user inputs to Collab operations.
 

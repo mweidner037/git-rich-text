@@ -7,6 +7,8 @@ import { IpcRendererEvent } from "electron";
  */
 export interface IMainToRenderer {
   signalClose(): void;
+  /** Not called for files we wrote ourselves. */
+  onFileChange(data: string): void;
   // tick(time: number, hello: string): void;
 }
 

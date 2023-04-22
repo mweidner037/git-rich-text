@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
+import { stopFileWatch } from "./files";
 import { handleCallMain } from "./receive_ipc";
 import { callRenderer, setupCallRenderer } from "./send_ipc";
 
@@ -21,6 +22,7 @@ const createWindow = () => {
     if (!sentCloseSignal) {
       sentCloseSignal = true;
       e.preventDefault();
+      stopFileWatch();
       callRenderer("signalClose");
     }
   });
