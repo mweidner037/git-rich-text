@@ -1,5 +1,6 @@
-import { app, IpcMainInvokeEvent } from "electron";
+import { IpcMainInvokeEvent } from "electron";
 import { IRendererToMain } from "../../common/renderer_to_main";
+import { readyToClose } from "../close_behavior";
 import { readInitial, write } from "../files";
 
 export function handleCallMain<K extends keyof IRendererToMain & string>(
@@ -13,12 +14,6 @@ export function handleCallMain<K extends keyof IRendererToMain & string>(
   }
   // @ts-expect-error TypeScript gets confused by this, see https://github.com/microsoft/TypeScript/issues/47615
   return method(...args);
-}
-
-// TODO: move elsewhere. Can't put in main.ts b/c circular dep.
-// eslint-disable-next-line @typescript-eslint/require-await
-async function readyToClose(): Promise<void> {
-  app.quit();
 }
 
 const rendererToMain: IRendererToMain = {
