@@ -1,5 +1,5 @@
 import { BrowserWindow } from "electron";
-import { IMainToRenderer } from "../common/main_to_renderer";
+import { IMainToRenderer } from "../../common/main_to_renderer";
 
 let mainWindow: BrowserWindow | null = null;
 

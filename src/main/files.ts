@@ -2,7 +2,7 @@ import * as chokidar from "chokidar";
 import { mkdir, readdir, readFile, writeFile } from "fs/promises";
 import os from "os";
 import path from "path";
-import { callRenderer } from "./send_ipc";
+import { callRenderer } from "./ipc/send_ipc";
 
 const root = path.join(os.homedir(), "Dropbox/Files/filestore-rich-text-demo");
 

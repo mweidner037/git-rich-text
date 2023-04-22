@@ -1,6 +1,6 @@
 import { setupEditor } from "./components/editor";
-import { setupReceiveIpc } from "./receive_ipc";
-import { callMain } from "./send_ipc";
+import { setupReceiveIpc } from "./ipc/receive_ipc";
+import { callMain } from "./ipc/send_ipc";
 
 setupReceiveIpc();
 

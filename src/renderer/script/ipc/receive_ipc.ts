@@ -2,7 +2,7 @@ import { IpcRendererEvent } from "electron";
 import {
   IMainToRenderer,
   OnCallRendererInternalType,
-} from "../../common/main_to_renderer";
+} from "../../../common/main_to_renderer";
 import { callMain } from "./send_ipc";
 
 declare global {

@@ -1,6 +1,6 @@
 import { app, IpcMainInvokeEvent } from "electron";
-import { IRendererToMain } from "../common/renderer_to_main";
-import { readAll, write } from "./files";
+import { IRendererToMain } from "../../common/renderer_to_main";
+import { readAll, write } from "../files";
 
 export function handleCallMain<K extends keyof IRendererToMain & string>(
   _event: IpcMainInvokeEvent,

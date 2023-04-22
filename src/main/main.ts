@@ -1,8 +1,8 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 import { stopFileWatch } from "./files";
-import { handleCallMain } from "./receive_ipc";
-import { callRenderer, setupCallRenderer } from "./send_ipc";
+import { handleCallMain } from "./ipc/receive_ipc";
+import { callRenderer, setupCallRenderer } from "./ipc/send_ipc";
 
 const createWindow = () => {
   const win = new BrowserWindow({

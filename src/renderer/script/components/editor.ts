@@ -3,8 +3,8 @@ import Quill, { Delta as DeltaType, DeltaStatic } from "quill";
 
 // Include CSS
 import "quill/dist/quill.snow.css";
-import { onFileChange, onSignalClose } from "../receive_ipc";
-import { callMain } from "../send_ipc";
+import { onFileChange, onSignalClose } from "../ipc/receive_ipc";
+import { callMain } from "../ipc/send_ipc";
 import { getDeviceID } from "./device_id";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
