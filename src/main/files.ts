@@ -1,8 +1,7 @@
 import * as chokidar from "chokidar";
-import { mkdir, readdir, readFile } from "fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "fs/promises";
 import os from "os";
 import path from "path";
-import writeFileAtomic from "write-file-atomic";
 import { callRenderer } from "./send_ipc";
 
 const root = path.join(os.homedir(), "Dropbox/Files/filestore-rich-text-demo");
@@ -18,6 +17,7 @@ export async function readAll(): Promise<string[]> {
     const ans: string[] = [];
     for (const file of files) {
       try {
+        if (!file.endsWith(".json")) continue;
         const content = await readFile(path.join(root, file), {
           encoding: "utf8",
         });
@@ -54,14 +54,16 @@ export function stopFileWatch() {
 }
 
 async function onFileChange(fullPath: string): Promise<void> {
-  // Note that we get changes for write-file-atomic's temp files, which
-  // have the format <file name>.<random number>. Hence we use "includes"
-  // to check for matches.
-  if (ourWrittenFile !== null && fullPath.includes(ourWrittenFile)) return;
+  if (!fullPath.endsWith(".json")) return;
+  if (ourWrittenFile !== null && fullPath.endsWith(ourWrittenFile)) return;
 
   console.log("onFileChange", fullPath);
   try {
-    const content = await readFile(path.join(root, fullPath), {
+    // Wait a moment for the change to hopefully finish.
+    // TODO: skip if get new onFileChange; do JSON parsing here so we
+    // can know when it succeeds.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const content = await readFile(fullPath, {
       encoding: "utf8",
     });
     callRenderer("onFileChange", content);
@@ -76,6 +78,11 @@ export async function write(file: string, data: string): Promise<void> {
 
   const thePath = path.join(root, file);
   await mkdir(path.dirname(thePath), { recursive: true });
-  // Use an atomic write to avoid losing progress if we crash while writing.
-  await writeFileAtomic(thePath, data, { encoding: "utf8" });
+  await writeFile(thePath, data, { encoding: "utf8" });
+  // Use an atomic write to avoid losing progress if we crash while writing?
+  // writeFileAtomic seems to confuse Dropbox (interprets every change as
+  // delete + re-add, causing annoying notification).
+  // Also, would prefer if its temp files were hidden from Dropbox - e.g.
+  // in /tmp or starting with ~.
+  // await writeFileAtomic(thePath, data, { encoding: "utf8" });
 }
