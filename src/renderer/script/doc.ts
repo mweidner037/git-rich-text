@@ -51,25 +51,30 @@ export async function setupDoc(): Promise<RichTextDoc> {
   doc.load(makeInitialSave());
 
   // Load the initial state.
-  const initialContents = await callMain("readInitial");
+  const initialContents = await callMain("loadInitial");
   for (const [savedState] of initialContents) {
     doc.load(savedState);
   }
 
   // Save function.
   let savePending = true;
+  let localChange = false;
   async function save() {
     if (savePending) {
+      const localChangeCopy = localChange;
       savePending = false;
+      localChange = false;
       console.log(`Saving...`);
-      await callMain("write", doc.save());
+      await callMain("save", doc.save(), localChangeCopy);
       console.log("Saved.");
     }
   }
 
-  // Save the merged state now, on Change (after SAVE_INTERVAL), and on close.
+  // Save the merged state now, after changes
+  // (delayed by SAVE_INTERVAL), and on close.
   void save();
-  doc.on("Change", () => {
+  doc.on("Transaction", (e) => {
+    if (e.meta.isLocalOp) localChange = true;
     if (!savePending) {
       savePending = true;
       // eslint-disable-next-line @typescript-eslint/no-misused-promises

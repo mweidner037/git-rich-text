@@ -21,14 +21,11 @@ interface FileContent {
   version: string;
   type: typeof TYPE;
   deviceID: string;
-  // TODO: also store a "plain" view of the state in JSON (html/markdown),
-  // so that a user inspecting the file can use its (non-collaborative)
-  // content even if they don't have the app.
   /** Uint8Array encoded with collabs.Bytes. */
   savedState: string;
 }
 
-export async function readInitial(): Promise<[savedState: Uint8Array][]> {
+export async function loadInitial(): Promise<[savedState: Uint8Array][]> {
   // Watch for future changes.
   setupFileWatch();
 
@@ -38,7 +35,7 @@ export async function readInitial(): Promise<[savedState: Uint8Array][]> {
     const files = await readdir(root);
     const ans: [savedState: Uint8Array][] = [];
     for (const file of files) {
-      const content = await readOne(path.join(root, file));
+      const content = await readContent(path.join(root, file));
       if (content === null) continue;
       ans.push([collabs.Bytes.parse(content.savedState)]);
     }
@@ -56,7 +53,7 @@ export async function readInitial(): Promise<[savedState: Uint8Array][]> {
   }
 }
 
-async function readOne(fullPath: string): Promise<FileContent | null> {
+async function readContent(fullPath: string): Promise<FileContent | null> {
   if (!fullPath.endsWith(".json")) return null;
 
   try {
@@ -110,14 +107,25 @@ async function onFileChange(fullPath: string): Promise<void> {
   const normalized = path.normalize(fullPath);
   if (normalized === ourFile || normalized === latestFile) return;
 
-  const content = await readOne(normalized);
+  const content = await readContent(normalized);
   if (content === null) return;
 
   console.log("onFileChange", normalized);
   callRenderer("onFileChange", collabs.Bytes.parse(content.savedState));
 }
 
-export async function write(savedState: Uint8Array): Promise<void> {
+/**
+ *
+ * @param savedState
+ * @param localChange Whether the state has changed due to local operations
+ * (else it has just changed by merging files).
+ * If false, only latestFile is written, to prevent back-and-forth saves
+ * when multiple users are online.
+ */
+export async function save(
+  savedState: Uint8Array,
+  localChange: boolean
+): Promise<void> {
   // Mkdir if needed.
   await mkdir(root, { recursive: true });
 
@@ -139,9 +147,12 @@ export async function write(savedState: Uint8Array): Promise<void> {
   console.log(`Saving to ${latestFile}...`);
   await writeFile(latestFile, data, { encoding: "utf8" });
 
-  // 2. Write to ourFile. If we crash while writing, latestFile
-  // will still have a good state.
-  console.log(`Saving to ${ourFile}...`);
-  await writeFile(ourFile, data, { encoding: "utf8" });
+  // 2. If localChange, write to ourFile (see function header).
+  // If we crash while writing, latestFile will still have a good state.
+  if (localChange) {
+    console.log(`Saving to ${ourFile}...`);
+    await writeFile(ourFile, data, { encoding: "utf8" });
+  }
+
   console.log("Done.");
 }
