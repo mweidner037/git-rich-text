@@ -1,54 +1,13 @@
-import * as collabs from "@collabs/collabs";
 import Quill, { Delta as DeltaType, DeltaStatic } from "quill";
 
 // Include CSS
 import "quill/dist/quill.snow.css";
-import { onFileChange, onSignalClose } from "../ipc/receive_ipc";
-import { callMain } from "../ipc/send_ipc";
+import { RichTextDoc } from "../doc";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const Delta: typeof DeltaType = Quill.import("delta");
 
-const noGrowAtEnd = [
-  // Links (Peritext Example 9)
-  "link",
-  // Paragraph-level (\n) formatting: should only apply to the \n, not
-  // extend to surrounding chars.
-  "header",
-  "blockquote",
-  "code-block",
-  "list",
-  "indent",
-];
-
-const SAVE_INTERVAL = 5000;
-
-class QuillDoc extends collabs.AbstractDoc {
-  readonly text: collabs.CRichText;
-
-  constructor(options?: collabs.RuntimeOptions) {
-    super(options);
-
-    this.text = this.runtime.registerCollab(
-      "text",
-      (init) => new collabs.CRichText(init, { noGrowAtEnd })
-    );
-  }
-}
-
-function makeInitialSave(): Uint8Array {
-  const doc = new QuillDoc({ debugReplicaID: "INIT" });
-  doc.transact(() => doc.text.insert(0, "\n", {}));
-  return doc.save();
-}
-
-export function setupEditor(initialContents: [savedState: Uint8Array][]) {
-  const doc = new QuillDoc();
-  // "Set the initial state"
-  // (a single "\n", required by Quill) by
-  // loading it from a separate doc.
-  doc.load(makeInitialSave());
-
+export function setupEditor(doc: RichTextDoc) {
   const quill = new Quill("#editor", {
     theme: "snow",
     // Modules list from quilljs example, based on
@@ -79,11 +38,6 @@ export function setupEditor(initialContents: [savedState: Uint8Array][]) {
     },
   });
 
-  // Load the initial state.
-  for (const [savedState] of initialContents) {
-    doc.load(savedState);
-  }
-
   // Display loaded state by syncing it to Quill.
   let ourChange = false;
   function updateContents(delta: DeltaStatic) {
@@ -100,28 +54,7 @@ export function setupEditor(initialContents: [savedState: Uint8Array][]) {
   // pushed to the end), since it's not in doc.text.
   updateContents(new Delta().retain(doc.text.length).delete(1));
 
-  let savePending = true;
-  async function save() {
-    if (savePending) {
-      savePending = false;
-      console.log(`Saving...`);
-      await callMain("write", doc.save());
-      console.log("Saved.");
-    }
-  }
-
-  // Save the merged state now, on change (debounced), and on close.
-  void save();
-  doc.on("Change", () => {
-    if (!savePending) {
-      savePending = true;
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      setTimeout(save, SAVE_INTERVAL);
-    }
-  });
-  onSignalClose(save);
-
-  // Reflect Collab operations in Quill.
+  // Reflect future Collab operations in Quill.
   // Note that for local operations, Quill has already updated
   // its own representation, so we should skip doing so again.
 
@@ -149,9 +82,6 @@ export function setupEditor(initialContents: [savedState: Uint8Array][]) {
       })
     );
   });
-
-  // Load files that change (presumably due to collaborators).
-  onFileChange((savedState) => doc.load(savedState));
 
   // Convert user inputs to Collab operations.
 
@@ -230,4 +160,5 @@ export function setupEditor(initialContents: [savedState: Uint8Array][]) {
   });
 
   // Ready.
+  // TODO: display "loading" screen until now.
 }
