@@ -10,6 +10,7 @@ const OPEN_WITH =
 const TYPE = "com.mattweidner.fileshare-rich-text-demo.FileContent";
 
 const root = path.join(os.homedir(), "Dropbox/Files/filestore-rich-text-demo");
+// TODO: what if deviceID is not unique among collaborators?
 const deviceID = os.hostname();
 const ourFile = path.join(root, deviceID + ".json");
 // Latest file is hidden so Dropbox doesn't sync it.

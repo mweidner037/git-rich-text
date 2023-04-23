@@ -1,8 +1,8 @@
-# Template Electron + TypeScript + Webpack
+# Fileshare rich-text-demo
 
-Template for an Electron app using TypeScript for both processes and Webpack to bundle the renderer process.
+Collaborative rich text editor that syncs over Dropbox.
 
-Setup and package versions should be current as of Dec 23 2022.
+Specifically, it autosaves its state to files in `~/Dropbox/Files/fileshare-rich-text-demo/`. Each device writes to its own file; whenever you start the app or a file changes, the app "merges" every file's contents using [Collabs](https://collabs.readthedocs.io/en/latest/). As a result, there are no sync conflicts, and all devices' (or collaborators') edits are preserved.
 
 ## Files
 
@@ -21,11 +21,3 @@ Production mode:
 - Configure an appropriate [maker](https://www.electronforge.io/config/makers) in `package.json` (default: `.deb` only).
 - Build and package with `npm run make`. Destination folder is `out/`. Note this uses Webpack production mode.
 - Run by installing the install file for your platform in `out/`.
-
-## TODO
-
-- Delete `.git`, then setup your own Git repo.
-- Search for TODO.
-- Write your app in `src/`.
-- Replace this README.
-- Configure Content Security Policy (devtools warning).
