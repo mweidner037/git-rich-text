@@ -1,4 +1,4 @@
-import * as collabs from "@collabs/collabs";
+import { Bytes } from "@collabs/collabs";
 import * as chokidar from "chokidar";
 import { mkdir, readdir, readFile, writeFile } from "fs/promises";
 import os from "os";
@@ -37,7 +37,7 @@ export async function loadInitial(): Promise<[savedState: Uint8Array][]> {
     for (const file of files) {
       const content = await readContent(path.join(root, file));
       if (content === null) continue;
-      ans.push([collabs.Bytes.parse(content.savedState)]);
+      ans.push([Bytes.parse(content.savedState)]);
     }
     return ans;
   } catch (err) {
@@ -111,7 +111,7 @@ async function onFileChange(fullPath: string): Promise<void> {
   if (content === null) return;
 
   console.log("onFileChange", normalized);
-  callRenderer("onFileChange", collabs.Bytes.parse(content.savedState));
+  callRenderer("onFileChange", Bytes.parse(content.savedState));
 }
 
 /**
@@ -134,7 +134,7 @@ export async function save(
     version: "0.0.0",
     type: TYPE,
     deviceID,
-    savedState: collabs.Bytes.stringify(savedState),
+    savedState: Bytes.stringify(savedState),
   };
   const data = JSON.stringify(content, undefined, 2);
 

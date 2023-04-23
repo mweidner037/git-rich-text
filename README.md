@@ -7,7 +7,7 @@ Specifically, it autosaves its state to files in `~/Dropbox/Files/fileshare-rich
 ## Files
 
 - `src/main`: Main process. Entry point is `main.ts`. Built to `build/main`.
-- `src/renderer`: Renderer process. HTML entry point is `static/index.html`; TypeScript entry point is `script/renderer.ts`. The static folder's contents are copied to `build/renderer`, together with Webpack's output bundle.
+- `src/renderer`: Renderer process. HTML entry point is `static/index.html`; TypeScript entry point is `script/renderer.tsx`. The static folder's contents are copied to `build/renderer`, together with Webpack's output bundle.
 
 ## Commands
 
