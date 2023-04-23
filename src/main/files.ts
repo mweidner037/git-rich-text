@@ -13,8 +13,8 @@ const root = path.join(os.homedir(), "Dropbox/Files/filestore-rich-text-demo");
 // TODO: what if deviceID is not unique among collaborators?
 const deviceID = os.hostname();
 const ourFile = path.join(root, deviceID + ".json");
-// Latest file is hidden so Dropbox doesn't sync it.
-const latestFile = path.join(root, ".latest.json");
+// "latest" file starts with ".~" so Dropbox doesn't sync it.
+const latestFile = path.join(root, ".~latest.json");
 
 interface FileContent {
   "open with": string;
