@@ -24,14 +24,39 @@ export async function loadDoc(): Promise<RichTextDoc> {
   // Save function.
   let savePending = true;
   let localChange = false;
+  let saveInProgress = false;
   async function save() {
+    if (saveInProgress) {
+      // Don't start saving when a save is already in progress.
+      // Instead, wait SAVE_INTERVAL and try again.
+      // Due to savePending and localChange, if this ends up
+      // queuing a bunch of saves, only the non-redundant ones will
+      // proceed, and localChange will be true iff some pending
+      // change was local.
+      console.log("save already in progress, queuing for later");
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
+      setTimeout(save, SAVE_INTERVAL);
+      return;
+    }
     if (savePending) {
       const localChangeCopy = localChange;
-      savePending = false;
-      localChange = false;
-      console.log(`Saving...`);
-      await callMain("save", doc.save(), localChangeCopy);
-      console.log("Saved.");
+      try {
+        saveInProgress = true;
+        // Reset savePending and localChange now, in case there are more
+        // changes while we're saving.
+        savePending = false;
+        localChange = false;
+        console.log(`Saving...`);
+        await callMain("save", doc.save(), localChangeCopy);
+        console.log("Saved.");
+      } catch (err) {
+        // Restore savePending and localChange since we didn't save successfully.
+        savePending = true;
+        localChange = localChangeCopy;
+        throw err;
+      } finally {
+        saveInProgress = false;
+      }
     }
   }
 

@@ -114,6 +114,7 @@ async function onFileChange(fullPath: string): Promise<void> {
   callRenderer("onFileChange", Bytes.parse(content.savedState));
 }
 
+let saveInProgress = false;
 /**
  *
  * @param savedState
@@ -121,38 +122,51 @@ async function onFileChange(fullPath: string): Promise<void> {
  * (else it has just changed by merging files).
  * If false, only latestFile is written, to prevent back-and-forth saves
  * when multiple users are online.
+ * @throws If called when another save() is already in progress.
+ * Currently, the renderer's load_doc.ts ensures that it does not call this twice, but
+ * we will have to refactor that if we end up calling this elsewhere.
  */
 export async function save(
   savedState: Uint8Array,
   localChange: boolean
 ): Promise<void> {
-  // Mkdir if needed.
-  await mkdir(root, { recursive: true });
-
-  const content: FileContent = {
-    "open with": OPEN_WITH,
-    version: "0.0.0",
-    type: TYPE,
-    deviceID,
-    savedState: Bytes.stringify(savedState),
-  };
-  const data = JSON.stringify(content, undefined, 2);
-
-  // 1. Write to latestFile, a hidden, non-synced file.
-  // That way, if we crash while writing, ourFile preserves its last
-  // good state.
-  // latestFile also lets us keep our own most recent state even if the user
-  // overwrites ourFile (e.g., saving a file from an email back-and-forth
-  // that never got renamed).
-  console.log(`Saving to ${latestFile}...`);
-  await writeFile(latestFile, data, { encoding: "utf8" });
-
-  // 2. If localChange, write to ourFile (see function header).
-  // If we crash while writing, latestFile will still have a good state.
-  if (localChange) {
-    console.log(`Saving to ${ourFile}...`);
-    await writeFile(ourFile, data, { encoding: "utf8" });
+  if (saveInProgress) {
+    throw new Error("save() already in progress");
   }
 
-  console.log("Done.");
+  try {
+    saveInProgress = true;
+
+    // Mkdir if needed.
+    await mkdir(root, { recursive: true });
+
+    const content: FileContent = {
+      "open with": OPEN_WITH,
+      version: "0.0.0",
+      type: TYPE,
+      deviceID,
+      savedState: Bytes.stringify(savedState),
+    };
+    const data = JSON.stringify(content, undefined, 2);
+
+    // 1. Write to latestFile, a hidden, non-synced file.
+    // That way, if we crash while writing, ourFile preserves its last
+    // good state.
+    // latestFile also lets us keep our own most recent state even if the user
+    // overwrites ourFile (e.g., saving a file from an email back-and-forth
+    // that never got renamed).
+    console.log(`Saving to ${latestFile}...`);
+    await writeFile(latestFile, data, { encoding: "utf8" });
+
+    // 2. If localChange, write to ourFile (see function header).
+    // If we crash while writing, latestFile will still have a good state.
+    if (localChange) {
+      console.log(`Saving to ${ourFile}...`);
+      await writeFile(ourFile, data, { encoding: "utf8" });
+    }
+
+    console.log("Done.");
+  } finally {
+    saveInProgress = false;
+  }
 }
