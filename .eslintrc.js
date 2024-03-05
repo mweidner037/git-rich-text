@@ -11,6 +11,7 @@ module.exports = {
     project: [
       "./tsconfig-main.json",
       "./tsconfig-renderer.json",
+      "./tsconfig-scripts.json",
       "./tsconfig-for-webpack-config.json",
     ],
     sourceType: "module",

@@ -58,6 +58,7 @@
   },
   "scripts": {
     "build": "npm-run-all build:*",
+    "build:scripts": "tsc --build tsconfig-scripts.json",
     "build:main": "tsc --build tsconfig-main.json",
     "build:renderer": "cross-env TS_NODE_PROJECT='tsconfig-for-webpack-config.json' webpack",
     "make": "npm-run-all make:*",
