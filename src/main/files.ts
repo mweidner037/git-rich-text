@@ -29,13 +29,12 @@ export async function loadInitial(): Promise<string[]> {
 
 let watcher: chokidar.FSWatcher | null = null;
 
-/** Notifies renderer if a file changes (besides one we just wrote). */
+/** Notifies renderer if file changes (besides our own changes). */
 function setupFileWatch() {
   watcher = chokidar.watch(file, {
     ignoreInitial: true,
+    usePolling: true,
   });
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
-  watcher.on("add", onFileChange);
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   watcher.on("change", onFileChange);
 }
@@ -45,7 +44,9 @@ export async function stopFileWatch(): Promise<void> {
 }
 
 async function onFileChange(): Promise<void> {
+  console.log("onFileChange");
   if (ignoreNextChange) {
+    console.log("ignored");
     ignoreNextChange = false;
     return;
   }
