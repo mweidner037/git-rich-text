@@ -12,7 +12,8 @@ export type WrapperOp =
     }
   | {
       type: "delete";
-      pos: Position;
+      startPos: Position;
+      count?: number;
     }
   | {
       type: "metas";

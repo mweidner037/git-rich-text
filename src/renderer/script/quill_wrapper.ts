@@ -115,7 +115,7 @@ export class QuillWrapper {
             this.richList.list.delete(pos);
             wrapperOps.push({
               type: "delete",
-              pos,
+              startPos: pos,
             });
           }
         }
@@ -192,12 +192,17 @@ export class QuillWrapper {
             }
             break;
           case "delete":
-            if (this.richList.list.has(op.pos)) {
-              const index = this.richList.list.indexOfPosition(op.pos);
-              this.richList.list.delete(op.pos);
-              pendingDelta = pendingDelta.compose(
-                new Delta().retain(index).delete(1)
-              );
+            for (const pos of Order.startPosToArray(
+              op.startPos,
+              op.count ?? 1
+            )) {
+              if (this.richList.list.has(pos)) {
+                const index = this.richList.list.indexOfPosition(pos);
+                this.richList.list.delete(pos);
+                pendingDelta = pendingDelta.compose(
+                  new Delta().retain(index).delete(1)
+                );
+              }
             }
             break;
           case "mark": {
