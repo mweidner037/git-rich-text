@@ -8,15 +8,26 @@ void (async function () {
   const baseFile = args[1];
   const incomingFile = args[2];
 
+  // console.log(
+  //   "\n\nCURRENT" +
+  //     fs.readFileSync(currentFile) +
+  //     "\n\nBASE\n\n" +
+  //     fs.readFileSync(baseFile) +
+  //     "\n\nINCOMING\n\n" +
+  //     fs.readFileSync(incomingFile)
+  // );
+
   const current = await getEvents(currentFile);
-  // const base = await getEvents(baseFile);
+  const base = await getEvents(baseFile);
   const incoming = await getEvents(incomingFile);
 
-  // Append to current all events in (incoming - current).
+  // Append to current all events in (incoming - base) that are not already
+  // in current. (Since base is not a subset of current during cherry-picking,
+  // we can't use (incoming - current).)
   // TODO: handle reversions (delete events in base - incoming).
   const appendStream = fs.createWriteStream(currentFile, { flags: "a" });
   for (const [id, line] of incoming.entries()) {
-    if (!current.has(id)) {
+    if (!base.has(id) && !current.has(id)) {
       appendStream.write("\n" + line);
     }
   }
