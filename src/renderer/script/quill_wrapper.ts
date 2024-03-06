@@ -1,18 +1,45 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import Quill, { DeltaStatic, Delta as DeltaType } from "quill";
 
 // Quill CSS.
-import { FormattedValues, RichList, sliceFromSpan } from "list-formatting";
+import {
+  FormattedValues,
+  RichList,
+  RichListSavedState,
+  sliceFromSpan,
+} from "list-formatting";
+import { BunchMeta } from "list-positions";
 import "quill/dist/quill.snow.css";
-import { Message } from "../common/messages";
+import { WrapperOp } from "../../common/ops";
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const Delta: typeof DeltaType = Quill.import("delta");
 
 export class QuillWrapper {
   readonly editor: Quill;
+  /**
+   * Instead of editing this directly, use the applyOps method.
+   */
   readonly richList: RichList<string>;
 
-  constructor(initial: string[], readonly onChange: (msg: Message) => void) {
+  private ourChange = false;
+
+  constructor(
+    /**
+     * Called when the local user performs ops, which need to be synchronized
+     * to other replicas.
+     *
+     * When a single user action produces multiple ops (e.g., meta + set + mark),
+     * they are passed together as an array.
+     */
+    readonly onLocalOps: (ops: WrapperOp[]) => void,
+    /**
+     * Must end in "\n" to match Quill, even if otherwise empty.
+     *
+     * Okay if marks are not in compareMarks order (weaker than RichListSavedState reqs).
+     */
+    initialState: RichListSavedState<string>
+  ) {
     this.richList = new RichList({ expandRules });
 
     // Setup Quill.
@@ -33,48 +60,55 @@ export class QuillWrapper {
     });
 
     // Load initial state into richList.
-    this.richList.order.load(welcome.order);
-    this.richList.list.load(welcome.list);
-    // welcome.marks is not a saved state; add directly.
-    for (const mark of welcome.marks) this.richList.formatting.addMark(mark);
+    this.richList.order.load(initialState.order);
+    this.richList.list.load(initialState.list);
+    // initialState.marks is not a saved state; add directly.
+    for (const mark of initialState.formatting) {
+      this.richList.formatting.addMark(mark);
+    }
+    if (
+      this.richList.list.length === 0 ||
+      this.richList.list.getAt(this.richList.list.length - 1) !== "\n"
+    ) {
+      throw new Error('Bad initial state: must end in "\n" to match Quill');
+    }
 
     // Sync initial state to Quill.
     this.editor.updateContents(
       deltaFromSlices(this.richList.formattedValues())
     );
-    // Delete Quill's own initial "\n" - the server's state already contains one.
+    // Delete Quill's own initial "\n" - the initial state is supposed to end with one.
     this.editor.updateContents(
       new Delta().retain(this.richList.list.length).delete(1)
     );
 
     // Sync Quill changes to our local state and to the server.
-    let ourChange = false;
     this.editor.on("text-change", (delta) => {
-      // Filter our own programmatic changes.
-      if (ourChange) return;
+      // Filter our own applyOps changes.
+      if (this.ourChange) return;
 
-      for (const op of getRelevantDeltaOperations(delta)) {
+      const wrapperOps: WrapperOp[] = [];
+      for (const deltaOp of getRelevantDeltaOperations(delta)) {
         // Insertion
-        if (op.insert) {
-          if (typeof op.insert === "string") {
-            const quillAttrs = op.attributes ?? {};
+        if (deltaOp.insert) {
+          if (typeof deltaOp.insert === "string") {
+            const quillAttrs = deltaOp.attributes ?? {};
             const formattingAttrs = Object.fromEntries(
               [...Object.entries(quillAttrs)].map(quillAttrToFormatting)
             );
             const [startPos, createdBunch, createdMarks] =
               this.richList.insertWithFormat(
-                op.index,
+                deltaOp.index,
                 formattingAttrs,
-                ...op.insert
+                ...deltaOp.insert
               );
-            this.send({
-              type: "set",
-              startPos,
-              chars: op.insert,
-              meta: createdBunch ?? undefined,
-            });
+            if (createdBunch) {
+              // Push meta op first to avoid missing BunchMeta deps.
+              wrapperOps.push({ type: "meta", meta: createdBunch });
+            }
+            wrapperOps.push({ type: "set", startPos, chars: deltaOp.insert });
             for (const mark of createdMarks) {
-              this.send({
+              wrapperOps.push({
                 type: "mark",
                 mark,
               });
@@ -85,75 +119,111 @@ export class QuillWrapper {
           }
         }
         // Deletion
-        else if (op.delete) {
+        else if (deltaOp.delete) {
           const toDelete = [
-            ...this.richList.list.positions(op.index, op.index + op.delete),
+            ...this.richList.list.positions(
+              deltaOp.index,
+              deltaOp.index + deltaOp.delete
+            ),
           ];
           for (const pos of toDelete) {
             this.richList.list.delete(pos);
-            this.send({
+            wrapperOps.push({
               type: "delete",
               pos,
             });
           }
         }
         // Formatting
-        else if (op.attributes && op.retain) {
-          for (const [quillKey, quillValue] of Object.entries(op.attributes)) {
+        else if (deltaOp.attributes && deltaOp.retain) {
+          for (const [quillKey, quillValue] of Object.entries(
+            deltaOp.attributes
+          )) {
             const [key, value] = quillAttrToFormatting([quillKey, quillValue]);
             const [mark] = this.richList.format(
-              op.index,
-              op.index + op.retain,
+              deltaOp.index,
+              deltaOp.index + deltaOp.retain,
               key,
               value
             );
-            this.send({
+            wrapperOps.push({
               type: "mark",
               mark,
             });
           }
         }
       }
-    });
 
-    // Sync server changes to our local state and to Quill.
-    this.ws.addEventListener("message", (e) => {
-      ourChange = true;
-      try {
-        const msg = JSON.parse(e.data) as Message;
-        switch (msg.type) {
+      if (wrapperOps.length !== 0) this.onLocalOps(wrapperOps);
+    });
+  }
+
+  /**
+   * Applies the given ops to the Quill state.
+   *
+   * They will all be applied to the state together,
+   * in one editor.updateContents call.
+   *
+   * Redundant ops are okay (will do nothing).
+   */
+  applyOps(wrapperOps: WrapperOp[]): void {
+    this.ourChange = true;
+    try {
+      // To defend against reordering within the same applyOps call, process
+      // "meta" ops first in a batch.
+      const allMetas: BunchMeta[] = [];
+      for (const op of wrapperOps) {
+        if (op.type === "meta") {
+          allMetas.push(op.meta);
+        }
+      }
+      this.richList.order.receive(allMetas);
+
+      // Process the non-"meta" ops.
+      let pendingDelta: DeltaStatic = new Delta();
+      for (const op of wrapperOps) {
+        switch (op.type) {
+          case "meta":
+            break;
           case "set":
-            if (msg.meta) {
-              this.richList.order.receive([msg.meta]);
+            // TODO: doesn't support updates, only initial sets (or redundant copies);
+            // also, assumes sets are in causal order, so the positions are still together
+            // and have the same format.
+            // Ideal solution would be to consider the general case, then opt
+            // list.set so that it is not much slower to call it one-by-one
+            // & post-batch the result for Quill. (What about getting the format?
+            // I guess could use slice args.)
+            if (!this.richList.list.has(op.startPos)) {
+              this.richList.list.set(op.startPos, ...op.chars);
+              const startIndex = this.richList.list.indexOfPosition(
+                op.startPos
+              );
+              const format = this.richList.formatting.getFormat(op.startPos);
+              pendingDelta = pendingDelta.compose(
+                new Delta()
+                  .retain(startIndex)
+                  .insert(op.chars, formattingToQuillAttr(format))
+              );
             }
-            // Sets are always nontrivial.
-            // Because the server enforces causal ordering, bunched values
-            // are always still contiguous and have a single format.
-            this.richList.list.set(msg.startPos, ...msg.chars);
-            const startIndex = this.richList.list.indexOfPosition(msg.startPos);
-            const format = this.richList.formatting.getFormat(msg.startPos);
-            this.editor.updateContents(
-              new Delta()
-                .retain(startIndex)
-                .insert(msg.chars, formattingToQuillAttr(format))
-            );
             break;
           case "delete":
-            if (this.richList.list.has(msg.pos)) {
-              const index = this.richList.list.indexOfPosition(msg.pos);
-              this.richList.list.delete(msg.pos);
-              this.editor.updateContents(new Delta().retain(index).delete(1));
+            if (this.richList.list.has(op.pos)) {
+              const index = this.richList.list.indexOfPosition(op.pos);
+              this.richList.list.delete(op.pos);
+              pendingDelta = pendingDelta.compose(
+                new Delta().retain(index).delete(1)
+              );
             }
             break;
-          case "mark":
-            const changes = this.richList.formatting.addMark(msg.mark);
+          case "mark": {
+            const changes = this.richList.formatting.addMark(op.mark);
             for (const change of changes) {
               const { startIndex, endIndex } = sliceFromSpan(
                 this.richList.list,
                 change.start,
                 change.end
               );
-              this.editor.updateContents(
+              pendingDelta = pendingDelta.compose(
                 new Delta()
                   .retain(startIndex)
                   .retain(
@@ -163,18 +233,19 @@ export class QuillWrapper {
               );
             }
             break;
+          }
           default:
-            throw new Error("Unknown message type: " + msg.type);
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore https://github.com/microsoft/TypeScript/issues/9838
+            throw new Error("Unknown WrapperOp type: " + op.type);
         }
-      } finally {
-        ourChange = false;
       }
-    });
-  }
 
-  private send(msg: Message) {
-    if (this.ws.readyState == WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(msg));
+      if (pendingDelta.ops!.length !== 0) {
+        this.editor.updateContents(pendingDelta);
+      }
+    } finally {
+      this.ourChange = false;
     }
   }
 }

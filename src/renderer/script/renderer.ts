@@ -1,4 +1,4 @@
-import { Message } from "../common/messages";
+import { Message } from "../../common/ops";
 import { setupReceiveIpc } from "./ipc/receive_ipc";
 import { callMain } from "./ipc/send_ipc";
 import { QuillWrapper } from "./quill_wrapper";
