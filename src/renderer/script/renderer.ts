@@ -105,6 +105,7 @@ void (async function () {
       addDeps(deps, order.getNodeFor(mark.end.pos));
     }
 
+    // TODO: compress (custom serializer)?
     const metasOp: WrapperOp = {
       type: "metas",
       metas: [...deps.values()].map((node) => node.meta()),
