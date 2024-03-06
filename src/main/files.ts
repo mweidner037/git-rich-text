@@ -82,7 +82,9 @@ export async function save(newLines: string[]): Promise<void> {
 
     console.log(`Saving to ${file}...`);
 
-    await appendFile(file, "\n" + newLines.join("\n"));
+    // Ending each line with "\n" prevents false diffs from adding "\n"
+    // to the last line.
+    await appendFile(file, newLines.join("\n") + "\n");
 
     console.log("Done.");
   } finally {
