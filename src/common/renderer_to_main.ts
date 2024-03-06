@@ -8,7 +8,7 @@ export interface AllPromises {
 export interface IRendererToMain {
   /** Reads the initial state and watches for future changes. */
   loadInitial(): Promise<string[]>;
-  save(newState: string[]): Promise<void>;
+  save(newLines: string[]): Promise<void>;
   readyToClose(): Promise<void>;
 }
 

@@ -9,7 +9,7 @@ import {
   RichListSavedState,
   sliceFromSpan,
 } from "list-formatting";
-import { BunchMeta } from "list-positions";
+import { BunchMeta, Order } from "list-positions";
 import "quill/dist/quill.snow.css";
 import { WrapperOp } from "../../common/ops";
 
@@ -247,6 +247,18 @@ export class QuillWrapper {
     } finally {
       this.ourChange = false;
     }
+  }
+
+  /**
+   * Fake initial saved state that's identical on all replicas: a single
+   * "\n", to match Quill's initial state.
+   */
+  static makeInitialState() {
+    const richList = new RichList<string>({
+      order: new Order({ newBunchID: () => "INIT" }),
+    });
+    richList.list.insertAt(0, "\n");
+    return richList.save();
   }
 }
 
