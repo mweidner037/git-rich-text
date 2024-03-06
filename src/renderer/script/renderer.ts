@@ -1,5 +1,9 @@
 import { WrapperOp } from "../../common/ops";
-import { onFileChange, setupReceiveIpc } from "./ipc/receive_ipc";
+import {
+  onFileChange,
+  onSignalClose,
+  setupReceiveIpc,
+} from "./ipc/receive_ipc";
 import { callMain } from "./ipc/send_ipc";
 import { QuillWrapper } from "./quill_wrapper";
 
@@ -16,10 +20,10 @@ void (async function () {
   });
 
   // Saving
-
   window.onblur = () => {
     void save();
   };
+  onSignalClose(save);
 
   const id = quill.richList.formatting.replicaID;
   let idCounter = 0;

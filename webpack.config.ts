@@ -4,7 +4,7 @@ import * as webpack from "webpack";
 
 const config: webpack.Configuration = {
   mode: "development",
-  entry: "./src/renderer/script/renderer.tsx",
+  entry: "./src/renderer/script/renderer.ts",
   target: "web",
   output: {
     filename: "renderer.js",
