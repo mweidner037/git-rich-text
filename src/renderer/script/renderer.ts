@@ -11,16 +11,22 @@ import { QuillWrapper } from "./quill_wrapper";
 void (async function () {
   setupReceiveIpc();
 
-  console.log("loadInitial");
+  console.log("loadInitial...");
   const initialLines = await callMain("loadInitial");
-  console.log("initial lines", initialLines);
+  console.log("loaded");
   const quill = new QuillWrapper(onLocalOps, QuillWrapper.makeInitialState());
   const order = quill.richList.order;
   quill.applyOps(opsFromLines(initialLines));
 
-  // Loading
-  onFileChange((newEvents) => {
-    quill.applyOps(opsFromLines(newEvents));
+  // Reloading
+  onFileChange((allLines) => {
+    console.log("Reloading...");
+    // TODO: if it's a suffix of existing lines (fast-forward), just applyOps.
+    const oldSel = quill.getSelection();
+    quill.load(QuillWrapper.makeInitialState());
+    quill.applyOps(opsFromLines(allLines));
+    quill.setSelection(oldSel);
+    console.log("reloaded");
   });
 
   // Saving

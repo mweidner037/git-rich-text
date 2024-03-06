@@ -9,11 +9,16 @@ import {
   RichListSavedState,
   sliceFromSpan,
 } from "list-formatting";
-import { BunchMeta, Order } from "list-positions";
+import { BunchMeta, Order, Position } from "list-positions";
 import "quill/dist/quill.snow.css";
 import { WrapperOp } from "../../common/ops";
 
 const Delta: typeof DeltaType = Quill.import("delta");
+
+export type Selection = {
+  start: Position;
+  end: Position;
+};
 
 export class QuillWrapper {
   readonly editor: Quill;
@@ -59,30 +64,10 @@ export class QuillWrapper {
       formats: ["bold", "italic", "header", "list"],
     });
 
-    // Load initial state into richList.
-    this.richList.order.load(initialState.order);
-    this.richList.list.load(initialState.list);
-    // initialState.marks is not a saved state; add directly.
-    for (const mark of initialState.formatting) {
-      this.richList.formatting.addMark(mark);
-    }
-    if (
-      this.richList.list.length === 0 ||
-      this.richList.list.getAt(this.richList.list.length - 1) !== "\n"
-    ) {
-      throw new Error('Bad initial state: must end in "\n" to match Quill');
-    }
+    // Load initial state.
+    this.load(initialState);
 
-    // Sync initial state to Quill.
-    this.editor.updateContents(
-      deltaFromSlices(this.richList.formattedValues())
-    );
-    // Delete Quill's own initial "\n" - the initial state is supposed to end with one.
-    this.editor.updateContents(
-      new Delta().retain(this.richList.list.length).delete(1)
-    );
-
-    // Sync Quill changes to our local state and to the server.
+    // Sync Quill changes to our local state and to the consumer.
     this.editor.on("text-change", (delta) => {
       // Filter our own applyOps changes.
       if (this.ourChange) return;
@@ -246,6 +231,70 @@ export class QuillWrapper {
       }
     } finally {
       this.ourChange = false;
+    }
+  }
+
+  /**
+   * Loads the given state, *overwriting* the current state.
+   *
+   * Note: Order is not cleared, just appended.
+   */
+  load(savedState: RichListSavedState<string>): void {
+    this.ourChange = true;
+    try {
+      // Clear existing state.
+      this.richList.clear();
+      this.editor.setContents(new Delta());
+
+      // Load initial state into richList.
+      this.richList.order.load(savedState.order);
+      this.richList.list.load(savedState.list);
+      // initialState.marks is not a saved state; add directly.
+      for (const mark of savedState.formatting) {
+        this.richList.formatting.addMark(mark);
+      }
+      if (
+        this.richList.list.length === 0 ||
+        this.richList.list.getAt(this.richList.list.length - 1) !== "\n"
+      ) {
+        throw new Error('Bad initial state: must end in "\n" to match Quill');
+      }
+
+      // Sync initial state to Quill.
+      this.editor.updateContents(
+        deltaFromSlices(this.richList.formattedValues())
+      );
+      // Delete Quill's own initial "\n" - the initial state is supposed to end with one.
+      this.editor.updateContents(
+        new Delta().retain(this.richList.list.length).delete(1)
+      );
+    } finally {
+      this.ourChange = false;
+    }
+  }
+
+  getSelection(): Selection | null {
+    const quillSel = this.editor.getSelection();
+    return quillSel === null
+      ? null
+      : {
+          start: this.richList.list.cursorAt(quillSel.index),
+          end: this.richList.list.cursorAt(quillSel.index + quillSel.length),
+        };
+  }
+
+  setSelection(sel: Selection | null): void {
+    if (sel === null) {
+      // Set fake selection for later.
+      this.editor.setSelection(0, 0);
+      this.editor.blur();
+    } else {
+      const startIndex = this.richList.list.indexOfCursor(sel.start);
+      const endIndex = this.richList.list.indexOfCursor(sel.end);
+      this.editor.setSelection({
+        index: startIndex,
+        length: endIndex - startIndex,
+      });
     }
   }
 
