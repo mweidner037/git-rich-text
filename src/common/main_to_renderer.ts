@@ -14,7 +14,7 @@ export interface IMainToRenderer {
    */
   signalClose(): void;
   /** Not called for files we wrote ourselves. */
-  onFileChange(savedState: Uint8Array): void;
+  onFileChange(newEvents: string[]): void;
 }
 
 export type OnCallRendererInternalType = (

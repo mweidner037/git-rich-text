@@ -1,31 +1,9 @@
-import { Bytes } from "@collabs/collabs";
 import * as chokidar from "chokidar";
 import { mkdir, readdir, readFile, writeFile } from "fs/promises";
-import os from "os";
 import path from "path";
 import { callRenderer } from "./ipc/send_ipc";
 
-const OPEN_WITH =
-  "fileshare rich-text-demo, https://github.com/mweidner037/fileshare-rich-text-demo";
-const TYPE = "com.mattweidner.fileshare-rich-text-demo.FileContent";
-
-const root = path.join(os.homedir(), "Dropbox/Files/filestore-rich-text-demo");
-// TODO: what if deviceID is not unique among collaborators?
-const deviceID = os.hostname();
-const ourFile = path.join(root, deviceID + ".json");
-// "latest" file starts with ".~" so Dropbox doesn't sync it.
-const latestFile = path.join(root, ".~latest.json");
-
-interface FileContent {
-  "open with": string;
-  version: string;
-  type: typeof TYPE;
-  deviceID: string;
-  /** Uint8Array encoded with collabs.Bytes. */
-  savedState: string;
-}
-
-export async function loadInitial(): Promise<[savedState: Uint8Array][]> {
+export async function loadInitial(): Promise<string[]> {
   // Watch for future changes.
   setupFileWatch();
 

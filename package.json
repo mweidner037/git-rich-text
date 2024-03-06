@@ -22,10 +22,7 @@
     "chokidar": "^3.5.3",
     "list-formatting": "^0.3.0",
     "list-positions": "^0.3.3",
-    "quill": "^1.3.7",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "tslib": "^2.4.1"
+    "quill": "^1.3.7"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.0.4",
@@ -33,8 +30,6 @@
     "@types/copy-webpack-plugin": "^10.1.0",
     "@types/node": "^18.11.17",
     "@types/quill": "^1.3.10",
-    "@types/react": "^18.0.38",
-    "@types/react-dom": "^18.0.11",
     "@types/webpack": "^5.28.0",
     "@typescript-eslint/eslint-plugin": "^5.47.0",
     "@typescript-eslint/parser": "^5.47.0",
