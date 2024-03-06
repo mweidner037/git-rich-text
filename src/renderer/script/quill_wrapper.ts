@@ -104,7 +104,7 @@ export class QuillWrapper {
               );
             if (createdBunch) {
               // Push meta op first to avoid missing BunchMeta deps.
-              wrapperOps.push({ type: "meta", meta: createdBunch });
+              wrapperOps.push({ type: "metas", metas: [createdBunch] });
             }
             wrapperOps.push({ type: "set", startPos, chars: deltaOp.insert });
             for (const mark of createdMarks) {
@@ -173,8 +173,8 @@ export class QuillWrapper {
       // "meta" ops first in a batch.
       const allMetas: BunchMeta[] = [];
       for (const op of wrapperOps) {
-        if (op.type === "meta") {
-          allMetas.push(op.meta);
+        if (op.type === "metas") {
+          allMetas.push(...op.metas);
         }
       }
       this.richList.order.receive(allMetas);
@@ -183,7 +183,7 @@ export class QuillWrapper {
       let pendingDelta: DeltaStatic = new Delta();
       for (const op of wrapperOps) {
         switch (op.type) {
-          case "meta":
+          case "metas":
             break;
           case "set":
             // TODO: doesn't support updates, only initial sets (or redundant copies);
