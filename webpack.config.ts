@@ -1,4 +1,4 @@
-import CopyWebpackPlugin from "copy-webpack-plugin";
+import HtmlWebpackPlugin from "html-webpack-plugin";
 import * as path from "path";
 import * as webpack from "webpack";
 
@@ -41,14 +41,9 @@ const config: webpack.Configuration = {
     extensions: [".tsx", ".ts", ".js"],
   },
   plugins: [
-    new CopyWebpackPlugin({
-      patterns: [
-        // Copy static files to build/renderer (merged with .js files).
-        {
-          from: "./src/renderer/static",
-          //to: "./[base]",
-        },
-      ],
+    // Use src/index.html as the entry point.
+    new HtmlWebpackPlugin({
+      template: "./src/renderer/index.html",
     }),
   ],
 };

@@ -10,7 +10,9 @@ import { QuillWrapper } from "./quill_wrapper";
 void (async function () {
   setupReceiveIpc();
 
+  console.log("loadInitial");
   const initialLines = await callMain("loadInitial");
+  console.log("initial lines", initialLines);
   const quill = new QuillWrapper(onLocalOps, QuillWrapper.makeInitialState());
   quill.applyOps(opsFromLines(initialLines));
 
