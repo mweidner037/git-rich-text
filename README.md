@@ -21,3 +21,22 @@ Production mode:
 - Configure an appropriate [maker](https://www.electronforge.io/config/makers) in `package.json` (default: `.deb` only).
 - Build and package with `npm run make`. Destination folder is `out/`. Note this uses Webpack production mode.
 - Run by installing the install file for your platform in `out/`.
+
+## Config
+
+Per repo config:
+
+In `.gitattributes` (committed):
+
+```
+*.clog merge=clog
+```
+
+Commands to run:
+
+```
+git config merge.clog.driver "node /home/matthew/phd2/git-rich-text/build/scripts/scripts/git_merge_driver.js %A %O %B"
+git config merge.clog.name "git-rich-text clog file merger"
+```
+
+Ref: [git-json-merge](https://github.com/jonatanpedersen/git-json-merge)
