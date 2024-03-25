@@ -1,16 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import Quill, { DeltaStatic, Delta as DeltaType } from "quill";
-
-// Quill CSS.
 import {
   FormattedValues,
   RichList,
   RichListSavedState,
-  sliceFromSpan,
   TimestampMark,
+  sliceFromSpan,
 } from "list-formatting";
 import { BunchMeta, Order, Position } from "list-positions";
+import Quill, { DeltaStatic, Delta as DeltaType } from "quill";
 
 import "quill/dist/quill.snow.css";
 
@@ -169,14 +167,12 @@ export class QuillWrapper {
    *
    * They will all be applied to the state together,
    * in one editor.updateContents call.
-   *
-   * Redundant ops are okay (will do nothing).
    */
   applyOps(wrapperOps: WrapperOp[]): void {
     this.ourChange = true;
     try {
       // To defend against reordering within the same applyOps call, process
-      // "meta" ops first in a batch.
+      // "metas" ops first in a batch.
       const allMetas: BunchMeta[] = [];
       for (const op of wrapperOps) {
         if (op.type === "metas") {
@@ -185,7 +181,7 @@ export class QuillWrapper {
       }
       this.richList.order.receive(allMetas);
 
-      // Process the non-"meta" ops.
+      // Process the non-"metas" ops.
       let pendingDelta: DeltaStatic = new Delta();
       for (const op of wrapperOps) {
         switch (op.type) {
@@ -272,10 +268,10 @@ export class QuillWrapper {
       this.richList.clear();
       this.editor.setContents(new Delta());
 
-      // Load initial state into richList.
+      // Load savedState into richList.
       this.richList.order.load(savedState.order);
       this.richList.list.load(savedState.list);
-      // initialState.marks is not a saved state; add directly.
+      // savedState.marks is not a saved state; add directly.
       for (const mark of savedState.formatting) {
         this.richList.formatting.addMark(mark);
       }
@@ -283,14 +279,14 @@ export class QuillWrapper {
         this.richList.list.length === 0 ||
         this.richList.list.getAt(this.richList.list.length - 1) !== "\n"
       ) {
-        throw new Error('Bad initial state: must end in "\n" to match Quill');
+        throw new Error('Bad saved state: must end in "\n" to match Quill');
       }
 
-      // Sync initial state to Quill.
+      // Sync savedState to Quill.
       this.editor.updateContents(
         deltaFromSlices(this.richList.formattedValues())
       );
-      // Delete Quill's own initial "\n" - the initial state is supposed to end with one.
+      // Delete Quill's own initial "\n" - the savedState is supposed to end with one.
       this.editor.updateContents(
         new Delta().retain(this.richList.list.length).delete(1)
       );

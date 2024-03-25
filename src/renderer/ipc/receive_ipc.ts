@@ -11,6 +11,22 @@ declare global {
   }
 }
 
+const mainToRenderer: IMainToRenderer = {
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  signalClose: async function (): Promise<void> {
+    if (signalCloseHandler) {
+      try {
+        await signalCloseHandler();
+      } finally {
+        await callMain("readyToClose");
+      }
+    }
+  },
+  onFileChange: function (allLines: string[]): void {
+    if (fileChangeHandler) fileChangeHandler(allLines);
+  },
+};
+
 function handleCallRenderer<K extends keyof IMainToRenderer & string>(
   _event: IpcRendererEvent,
   name: K,
@@ -37,19 +53,3 @@ let fileChangeHandler: ((allLines: string[]) => void) | null = null;
 export function onFileChange(handler: (allLines: string[]) => void): void {
   fileChangeHandler = handler;
 }
-
-const mainToRenderer: IMainToRenderer = {
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
-  signalClose: async function (): Promise<void> {
-    if (signalCloseHandler) {
-      try {
-        await signalCloseHandler();
-      } finally {
-        await callMain("readyToClose");
-      }
-    }
-  },
-  onFileChange: function (allLines: string[]): void {
-    if (fileChangeHandler) fileChangeHandler(allLines);
-  },
-};
