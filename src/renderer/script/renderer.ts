@@ -1,13 +1,12 @@
 import { TimestampFormatting } from "list-formatting";
 import { BunchNode, List, Order, Outline } from "list-positions";
-import { WrapperOp } from "../../common/ops";
 import {
   onFileChange,
   onSignalClose,
   setupReceiveIpc,
 } from "./ipc/receive_ipc";
 import { callMain } from "./ipc/send_ipc";
-import { QuillWrapper } from "./quill_wrapper";
+import { QuillWrapper, WrapperOp } from "./quill_wrapper";
 
 void (async function () {
   setupReceiveIpc();

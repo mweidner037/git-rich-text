@@ -8,10 +8,11 @@ import {
   RichList,
   RichListSavedState,
   sliceFromSpan,
+  TimestampMark,
 } from "list-formatting";
 import { BunchMeta, Order, Position } from "list-positions";
+
 import "quill/dist/quill.snow.css";
-import { WrapperOp } from "../../common/ops";
 
 const Delta: typeof DeltaType = Quill.import("delta");
 
@@ -19,6 +20,26 @@ export type Selection = {
   start: Position;
   end: Position;
 };
+
+/**
+ * An operation that can be performed on the QuillWrapper or emitted by it.
+ */
+export type WrapperOp =
+  | {
+      type: "set";
+      startPos: Position;
+      chars: string;
+    }
+  | {
+      type: "delete";
+      startPos: Position;
+      count?: number;
+    }
+  | {
+      type: "metas";
+      metas: BunchMeta[];
+    }
+  | { type: "mark"; mark: TimestampMark };
 
 export class QuillWrapper {
   readonly editor: Quill;

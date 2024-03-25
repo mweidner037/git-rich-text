@@ -13,7 +13,10 @@ export interface IMainToRenderer {
    * IRendererToMain.readyToClose().
    */
   signalClose(): void;
-  /** Not called for files we wrote ourselves. */
+  /**
+   * Called when the file changes on disk (not by us)
+   * with its new content.
+   */
   onFileChange(allLines: string[]): void;
 }
 
