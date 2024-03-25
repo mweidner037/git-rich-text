@@ -1,4 +1,4 @@
-import { CallMainInternalType } from "../../../common/renderer_to_main";
+import { CallMainInternalType } from "../../common/renderer_to_main";
 
 declare global {
   interface Window {
