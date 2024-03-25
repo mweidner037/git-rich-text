@@ -62,9 +62,10 @@ export class QuillWrapper {
      *
      * Okay if marks are not in compareMarks order (weaker than RichListSavedState reqs).
      */
-    initialState: RichListSavedState<string>
+    initialState: RichListSavedState<string>,
+    order?: Order
   ) {
-    this.richList = new RichList({ expandRules });
+    this.richList = new RichList({ expandRules, order });
 
     // Setup Quill.
     const editorContainer = document.getElementById("editor") as HTMLDivElement;
