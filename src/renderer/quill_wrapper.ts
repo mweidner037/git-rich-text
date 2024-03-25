@@ -37,7 +37,7 @@ export type WrapperOp =
       type: "metas";
       metas: BunchMeta[];
     }
-  | { type: "mark"; mark: TimestampMark };
+  | { type: "marks"; marks: TimestampMark[] };
 
 export class QuillWrapper {
   readonly editor: Quill;
@@ -111,12 +111,7 @@ export class QuillWrapper {
               wrapperOps.push({ type: "metas", metas: [createdBunch] });
             }
             wrapperOps.push({ type: "set", startPos, chars: deltaOp.insert });
-            for (const mark of createdMarks) {
-              wrapperOps.push({
-                type: "mark",
-                mark,
-              });
-            }
+            wrapperOps.push({ type: "marks", marks: createdMarks });
           } else {
             // Embed of object
             throw new Error("Embeds not supported");
@@ -151,8 +146,8 @@ export class QuillWrapper {
               value
             );
             wrapperOps.push({
-              type: "mark",
-              mark,
+              type: "marks",
+              marks: [mark],
             });
           }
         }
@@ -222,22 +217,24 @@ export class QuillWrapper {
               }
             }
             break;
-          case "mark": {
-            const changes = this.richList.formatting.addMark(op.mark);
-            for (const change of changes) {
-              const { startIndex, endIndex } = sliceFromSpan(
-                this.richList.list,
-                change.start,
-                change.end
-              );
-              pendingDelta = pendingDelta.compose(
-                new Delta()
-                  .retain(startIndex)
-                  .retain(
-                    endIndex - startIndex,
-                    formattingToQuillAttr({ [change.key]: change.value })
-                  )
-              );
+          case "marks": {
+            for (const mark of op.marks) {
+              const changes = this.richList.formatting.addMark(mark);
+              for (const change of changes) {
+                const { startIndex, endIndex } = sliceFromSpan(
+                  this.richList.list,
+                  change.start,
+                  change.end
+                );
+                pendingDelta = pendingDelta.compose(
+                  new Delta()
+                    .retain(startIndex)
+                    .retain(
+                      endIndex - startIndex,
+                      formattingToQuillAttr({ [change.key]: change.value })
+                    )
+                );
+              }
             }
             break;
           }

@@ -17,31 +17,37 @@ void (async function () {
   //     fs.readFileSync(incomingFile)
   // );
 
-  const current = await getEvents(currentFile);
-  const base = await getEvents(baseFile);
-  const incoming = await getEvents(incomingFile);
+  const current = await readUpdates(currentFile);
+  const base = await readUpdates(baseFile);
+  const incoming = await readUpdates(incomingFile);
 
-  // Append to current all events in (incoming - base) that are not already
+  // Append to current all updates in (incoming - base) that are not already
   // in current. (Since base is not a subset of current during cherry-picking,
   // we can't use (incoming - current).)
-  // TODO: handle reversions (delete events in base - incoming).
+  // Also append to current all updates in base that start with "meta ", as described
+  // in the readme.
+  // TODO: handle reversions (delete updates in base - incoming)?
   const appendStream = fs.createWriteStream(currentFile, { flags: "a" });
-  for (const [id, line] of incoming.entries()) {
-    if (!base.has(id) && !current.has(id)) {
-      appendStream.write("\n" + line);
+  for (const update of incoming) {
+    if (!current.has(update)) {
+      if (update.startsWith("meta ") || !base.has(update)) {
+        appendStream.write("\n" + update);
+      }
     }
   }
   appendStream.end();
 })();
 
-async function getEvents(file: string): Promise<Map<string, string>> {
-  const ans = new Map<string, string>();
+/**
+ * Reads all of the updates (lines) from file into a Set, in log order.
+ */
+async function readUpdates(file: string): Promise<Set<string>> {
+  const updates = new Set<string>();
   const rl = readline.createInterface(fs.createReadStream(file));
   for await (const line of rl) {
     if (line === "") continue;
-    const id = line.slice(0, line.indexOf(" "));
-    ans.set(id, line);
+    updates.add(line);
   }
   rl.close();
-  return ans;
+  return updates;
 }
