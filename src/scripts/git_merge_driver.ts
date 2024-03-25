@@ -25,7 +25,7 @@ void (async function () {
   // in current. (Since base is not a subset of current during cherry-picking,
   // we can't use (incoming - current).)
   // Also append to current all updates in base that start with "meta ", as described
-  // in the readme.
+  // in `src/renderer/updates.ts`.
   // TODO: handle reversions (delete updates in base - incoming)?
   const appendStream = fs.createWriteStream(currentFile, { flags: "a" });
   for (const update of incoming) {

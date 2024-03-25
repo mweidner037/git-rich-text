@@ -11,7 +11,16 @@ export type UpdatePre =
   | { type: "marks"; marks: TimestampMark[] };
 
 /**
- * The type of updates stored in the log (as JSON lines).
+ * The content of updates stored in the log.
+ *
+ * Each update is stored as one line in the log, JSON encoded.
+ *
+ * Optionally, an update may be marked as metadata, in which case its line
+ * is prefixed with "meta ". The git merge driver treats these specially:
+ * during cherry-picking, incoming metadata updates are appended to current
+ * even if they are not in (incoming - base), in case other updates
+ * depend on them. For this to be reasonable, updates marked as metadata
+ * should not directly affect the user-visible state.
  */
 export type Update = {
   /**

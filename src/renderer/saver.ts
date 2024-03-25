@@ -8,10 +8,9 @@ export class Saver {
   readonly saverID: string;
   private idCounter = 0;
 
-  // To avoid an excessive number of updates (hence JSON overhead),
-  // we accumulate all of a save's changes into a single update of
-  // each type, instead of writing out WrapperOps directly.
-  // See updates.ts.
+  // Instead of using WrapperOps directly as updates (high overhead),
+  // we collect all of the ops for each save into one Update for
+  // each op type.
   private pendingMetas: BunchMeta[];
   private readonly pendingSets: Text;
   private readonly pendingDeletes: Outline;
@@ -62,12 +61,8 @@ export class Saver {
   pendingLines(): string[] {
     const lines: string[] = [];
     /**
-     * @param isMeta If true, the update is prefixed by "meta ".
-     * Use this for updates that have no direct effect on the state but that may
-     * be dependencies of later updates. The merge driver handles these specially
-     * to avoid missing dependencies during cherry-picking.
-     * (Otherwise, the merge driver treats all updates as opaque, to make it easy
-     * to add new update types later.)
+     * @param isMeta Whether to mark the update as metadata in the log.
+     * See the comment in `src/renderer/updates.ts`.
      */
     const addUpdate = (updatePre: UpdatePre, isMeta = false): void => {
       const update: Update = { id: this.nextID(), ...updatePre };
@@ -78,7 +73,7 @@ export class Saver {
       addUpdate(
         {
           type: "metas",
-          // TODO: compress (custom serializer)?
+          // OPT: compress (custom serializer)?
           metas: this.pendingMetas,
         },
         true
@@ -86,7 +81,7 @@ export class Saver {
       this.pendingMetas = [];
     }
 
-    // TODO: activeMarks instead.
+    // OPT: activeMarks instead.
     const theMarks = [...this.pendingMarks.marks()];
     if (theMarks.length !== 0) {
       addUpdate({ type: "marks", marks: theMarks });
@@ -130,7 +125,8 @@ export class Saver {
           break;
         }
         case "sets": {
-          // TODO: optimize by skipping Text construction? Likewise for deletes.
+          // OPT: Go directly from saved state to items, skipping Text construction?
+          // Likewise for deletes.
           const text = new Text(this.order);
           text.load(update.sets);
           for (const [startPos, chars] of text.items()) {

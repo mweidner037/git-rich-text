@@ -28,7 +28,7 @@ void (async function () {
   // Reloading
   onFileChange((allLines) => {
     console.log("Reloading...");
-    // TODO: if it's a suffix of existing lines (fast-forward), just applyOps.
+    // OPT: if it's a suffix of existing lines (fast-forward), just applyOps.
     const oldSel = quill.getSelection();
     quill.load(QuillWrapper.makeInitialState());
     quill.applyOps(saver.opsFromLines(allLines));
