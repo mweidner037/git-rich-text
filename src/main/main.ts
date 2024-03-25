@@ -1,9 +1,9 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow } from "electron";
 import path from "path";
 import { setupCloseBehavior } from "./close_behavior";
 import { setupFiles } from "./files";
-import { handleCallMain } from "./ipc/receive_ipc";
-import { setupCallRenderer } from "./ipc/send_ipc";
+import { setupReceiveIpc } from "./ipc/receive_ipc";
+import { setupSendIpc } from "./ipc/send_ipc";
 
 if (process.argv.length < 3) {
   console.error("No file arg provided");
@@ -15,21 +15,26 @@ if (!theFile.endsWith(".clog")) {
   process.exit(2);
 }
 
-const createWindow = () => {
-  const win = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-    },
-  });
-  setupCallRenderer(win);
-  setupCloseBehavior(win);
-  void win.loadFile("build/renderer/index.html");
-};
+void app
+  .whenReady()
+  .then(async () => {
+    // Call this first b/c it checks if the file is accessible.
+    await setupFiles(theFile);
 
-void app.whenReady().then(async () => {
-  await setupFiles(theFile);
-  ipcMain.handle("callMain", handleCallMain);
-  createWindow();
-});
+    const win = new BrowserWindow({
+      width: 800,
+      height: 600,
+      webPreferences: {
+        preload: path.join(__dirname, "preload.js"),
+      },
+    });
+    setupReceiveIpc();
+    setupSendIpc(win);
+    setupCloseBehavior(win);
+
+    void win.loadFile("build/renderer/index.html");
+  })
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });

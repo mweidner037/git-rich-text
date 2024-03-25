@@ -38,7 +38,7 @@ Install with `npm i`.
 
 Build in dev mode with `npm run build`.
 
-Run in dev mode with `npm run start <save file name>.clog`. The save file will be created if it doesn't exist. It should have a `.clog` extension.
+Run in dev mode with `npm run start <save file name>.clog`. The save file will be created if it doesn't exist. It must have a `.clog` extension.
 
 ### Git Config
 

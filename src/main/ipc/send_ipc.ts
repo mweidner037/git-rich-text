@@ -3,7 +3,7 @@ import { IMainToRenderer } from "../../common/main_to_renderer";
 
 let mainWindow: BrowserWindow | null = null;
 
-export function setupCallRenderer(win: BrowserWindow) {
+export function setupSendIpc(win: BrowserWindow) {
   mainWindow = win;
 }
 

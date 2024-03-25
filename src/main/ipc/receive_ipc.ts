@@ -1,9 +1,15 @@
-import { IpcMainInvokeEvent } from "electron";
+import { IpcMainInvokeEvent, ipcMain } from "electron";
 import { AllPromises, IRendererToMain } from "../../common/renderer_to_main";
 import { readyToClose } from "../close_behavior";
 import { loadInitial, save } from "../files";
 
-export function handleCallMain<K extends keyof IRendererToMain & string>(
+const rendererToMain: IRendererToMain & AllPromises = {
+  loadInitial,
+  save,
+  readyToClose,
+};
+
+function handleCallMain<K extends keyof IRendererToMain & string>(
   _event: IpcMainInvokeEvent,
   name: K,
   args: Parameters<IRendererToMain[K]>
@@ -16,8 +22,6 @@ export function handleCallMain<K extends keyof IRendererToMain & string>(
   return method(...args);
 }
 
-const rendererToMain: IRendererToMain & AllPromises = {
-  loadInitial,
-  save,
-  readyToClose,
-};
+export function setupReceiveIpc(): void {
+  ipcMain.handle("callMain", handleCallMain);
+}

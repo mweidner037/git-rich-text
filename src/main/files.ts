@@ -1,4 +1,5 @@
 import * as chokidar from "chokidar";
+import fs from "fs";
 import { access, appendFile, mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import { callRenderer } from "./ipc/send_ipc";
@@ -15,6 +16,8 @@ export async function setupFiles(inputFile: string) {
     await mkdir(path.dirname(file), { recursive: true });
     await writeFile(file, "");
   }
+  // Check that we have RW access.
+  await access(file, fs.constants.R_OK | fs.constants.W_OK);
 }
 
 export async function loadInitial(): Promise<string[]> {
