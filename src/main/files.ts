@@ -37,6 +37,7 @@ function setupFileWatch() {
   watcher = chokidar.watch(file, {
     ignoreInitial: true,
     usePolling: true,
+    
   });
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   watcher.on("change", onFileChange);

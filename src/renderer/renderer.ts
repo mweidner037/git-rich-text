@@ -5,8 +5,8 @@ import {
   setupReceiveIpc,
 } from "./ipc/receive_ipc";
 import { callMain } from "./ipc/send_ipc";
-import { Saver } from "./saver";
 import { QuillWrapper } from "./quill_wrapper";
+import { Saver } from "./saver";
 
 void (async function () {
   setupReceiveIpc();
@@ -47,12 +47,17 @@ void (async function () {
     if (inSave) return;
 
     inSave = true;
-    console.log("saving...");
     try {
-      await callMain("save", saver.pendingLines());
+      console.log("saving...");
+      const lines = saver.pendingLines();
+      if (lines.length === 0) {
+        console.log("skipped");
+        return;
+      }
+      await callMain("save", lines);
+      console.log("saved");
     } finally {
       inSave = false;
     }
-    console.log("saved");
   }
 })();

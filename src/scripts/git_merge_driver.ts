@@ -31,7 +31,7 @@ void (async function () {
   for (const update of incoming) {
     if (!current.has(update)) {
       if (update.startsWith("meta ") || !base.has(update)) {
-        appendStream.write("\n" + update);
+        appendStream.write(update + "\n");
       }
     }
   }

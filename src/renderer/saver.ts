@@ -98,7 +98,7 @@ export class Saver {
         type: "deletes",
         deletes: this.pendingDeletes.save(),
       });
-      this.pendingDeletes.save();
+      this.pendingDeletes.clear();
     }
 
     return lines;
@@ -118,36 +118,43 @@ export class Saver {
       if (line.startsWith("meta ")) {
         line = line.slice(5);
       }
-      const update = JSON.parse(line) as Update;
-      switch (update.type) {
-        case "metas": {
-          ops.push({ type: "metas", metas: update.metas });
-          break;
-        }
-        case "sets": {
-          // OPT: Go directly from saved state to items, skipping Text construction?
-          // Likewise for deletes.
-          const text = new Text(this.order);
-          text.load(update.sets);
-          for (const [startPos, chars] of text.items()) {
-            ops.push({ type: "set", startPos, chars });
+      try {
+        const update = JSON.parse(line) as Update;
+        switch (update.type) {
+          case "metas": {
+            // Handle metas ourselves. We need them to load set/delete ops.
+            this.order.load(update.metas);
+            break;
           }
-          break;
-        }
-        case "deletes": {
-          const outline = new Outline(this.order);
-          outline.load(update.deletes);
-          for (const [startPos, count] of outline.items()) {
-            ops.push({ type: "delete", startPos, count });
+          case "sets": {
+            // OPT: Go directly from saved state to items, skipping Text construction?
+            // Likewise for deletes.
+            // If so, send metas to WrapperOps instead of handling in previous case.
+            const text = new Text(this.order);
+            text.load(update.sets);
+            for (const [startPos, chars] of text.items()) {
+              ops.push({ type: "set", startPos, chars });
+            }
+            break;
           }
-          break;
+          case "deletes": {
+            const outline = new Outline(this.order);
+            outline.load(update.deletes);
+            for (const [startPos, count] of outline.items()) {
+              ops.push({ type: "delete", startPos, count });
+            }
+            break;
+          }
+          case "marks": {
+            ops.push({ type: "marks", marks: update.marks });
+            break;
+          }
+          default:
+            console.error(`Unknown update type, skipping: "${line}"`);
         }
-        case "marks": {
-          ops.push({ type: "marks", marks: update.marks });
-          break;
-        }
-        default:
-          console.error(`Unknown update type, skipping: "${line}"`);
+      } catch (err) {
+        console.error("Error processing line:", err);
+        console.error(line);
       }
     }
     return ops;
