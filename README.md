@@ -69,15 +69,13 @@ After starting the editor with `npm start <save file name>.clog`, use it normall
 
 You can `git commit`, `git branch`, and `git checkout` as normal.
 
-Merge and cherry-pick should work basically as expected. <!-- TODO: test rebase. --> Note that these alway apply the incoming updates "on top" of the target branch, appending them to the log. So merging A into B gives a different log order than merging B into A. (Currently, this does not lead to different rich-text states, but it may in the future.)
+Merge, cherry-pick, and rebase should work basically as expected. Note that these alway apply the incoming updates "on top" of the target branch, appending them to the log. So merging A into B gives a different log order than merging B into A. (Currently, this does not lead to different rich-text states, but it may in the future.)
 
-<!-- TODO: test, then uncomment
 ### Remote Branches
 
 To sync with a remote branch in a conflict-free way, do `git pull --rebase` and then `git push`. (The `--rebase` ensures that your local updates are applied "on top" of the remote branch: you and your collaborators are appending to the remote log together, not inserting into the middle.)
 
 I don't know how to configure a custom merge driver for GitHub PRs. Instead, locally rebase on top of the target branch just before merging, so that it's a fast-forward on GitHub's end.
--->
 
 ## References
 
