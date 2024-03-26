@@ -81,13 +81,6 @@ export class Saver {
       this.pendingMetas = [];
     }
 
-    // OPT: activeMarks instead.
-    const theMarks = [...this.pendingMarks.marks()];
-    if (theMarks.length !== 0) {
-      addUpdate({ type: "marks", marks: theMarks });
-      this.pendingMarks.clear();
-    }
-
     if (this.pendingSets.length !== 0) {
       addUpdate({ type: "sets", sets: this.pendingSets.save() });
       this.pendingSets.clear();
@@ -99,6 +92,13 @@ export class Saver {
         deletes: this.pendingDeletes.save(),
       });
       this.pendingDeletes.clear();
+    }
+
+    // OPT: activeMarks instead.
+    const theMarks = [...this.pendingMarks.marks()];
+    if (theMarks.length !== 0) {
+      addUpdate({ type: "marks", marks: theMarks });
+      this.pendingMarks.clear();
     }
 
     return lines;

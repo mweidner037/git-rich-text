@@ -183,28 +183,27 @@ export class QuillWrapper {
         switch (op.type) {
           case "metas":
             break;
-          case "set":
-            // TODO: doesn't support updates, only initial sets (or redundant copies);
-            // also, assumes sets are in causal order, so the positions are still together
-            // and have the same format.
-            // Ideal solution would be to consider the general case, then opt
-            // list.set so that it is not much slower to call it one-by-one
-            // & post-batch the result for Quill. (What about getting the format?
-            // I guess could use slice args.)
-            if (!this.richList.list.has(op.startPos)) {
-              this.richList.list.set(op.startPos, ...op.chars);
-              const startIndex = this.richList.list.indexOfPosition(
-                op.startPos
-              );
-              const format = this.richList.formatting.getFormat(op.startPos);
-              pendingDelta = pendingDelta.compose(
-                new Delta()
-                  .retain(startIndex)
-                  .insert(op.chars, formattingToQuillAttr(format))
-              );
+          case "set": {
+            // OPT: Apply these in bulk if possible (common case of causally ordered ops).
+            const poss = Order.startPosToArray(op.startPos, op.chars.length);
+            for (let i = 0; i < poss.length; i++) {
+              const pos = poss[i];
+              const char = op.chars[i];
+              if (!this.richList.list.has(pos)) {
+                this.richList.list.set(pos, char);
+                const index = this.richList.list.indexOfPosition(pos);
+                const format = this.richList.formatting.getFormat(pos);
+                pendingDelta = pendingDelta.compose(
+                  new Delta()
+                    .retain(index)
+                    .insert(char, formattingToQuillAttr(format))
+                );
+              }
             }
             break;
+          }
           case "delete":
+            // OPT: Apply these in bulk if possible (common case of causally ordered ops).
             for (const pos of Order.startPosToArray(
               op.startPos,
               op.count ?? 1
@@ -227,14 +226,16 @@ export class QuillWrapper {
                   change.start,
                   change.end
                 );
-                pendingDelta = pendingDelta.compose(
-                  new Delta()
-                    .retain(startIndex)
-                    .retain(
-                      endIndex - startIndex,
-                      formattingToQuillAttr({ [change.key]: change.value })
-                    )
-                );
+                if (startIndex !== endIndex) {
+                  pendingDelta = pendingDelta.compose(
+                    new Delta()
+                      .retain(startIndex)
+                      .retain(
+                        endIndex - startIndex,
+                        formattingToQuillAttr({ [change.key]: change.value })
+                      )
+                  );
+                }
               }
             }
             break;
