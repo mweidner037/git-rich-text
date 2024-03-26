@@ -4,11 +4,15 @@ Collaborative rich text editing over git, with conflict-free (GDocs-style) mergi
 
 Made with [list-positions](https://github.com/mweidner037/list-positions#readme) / [list-formatting](https://github.com/mweidner037/list-formatting#readme), [Quill](https://quilljs.com/), and Electron.
 
-Demo recordings:
+## Demos
 
-![Merge](./media/merge_demo.mp4)
+### Merge
 
-![Cherry-pick](./media/cherry_pick_demo.mp4)
+https://github.com/mweidner037/git-rich-text/assets/17693586/d436b55d-1537-4438-90b9-fda71dc0fca2
+
+### Cherry-pick
+
+https://github.com/mweidner037/git-rich-text/assets/17693586/18558d26-4b30-4021-b922-bbf9c0f86461
 
 ## How It Works
 
