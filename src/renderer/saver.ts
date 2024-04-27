@@ -17,6 +17,10 @@ export class Saver {
   // Instead of using WrapperOps directly as updates (high overhead),
   // we collect all of the ops for each save into one Update for
   // each op type.
+  // Note: We could use PositionCharMap, PositionSet, and TimestampMark[] here
+  // instead of Text, Outline, and TimestampFormatting,
+  // for a bit more efficiency and to avoid needing access to order.
+  // (However, we do need Order & TimestampFormatting if we want to later save just the active marks.)
   private pendingMetas: BunchMeta[];
   private readonly pendingSets: Text;
   private readonly pendingDeletes: Outline;
