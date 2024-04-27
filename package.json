@@ -19,9 +19,9 @@
     }
   },
   "dependencies": {
+    "@list-positions/formatting": "^1.0.0",
     "chokidar": "^3.5.3",
-    "list-formatting": "0.5.x",
-    "list-positions": "0.5.x",
+    "list-positions": "^1.0.0",
     "maybe-random-string": "^1.0.0",
     "quill": "^1.3.7"
   },

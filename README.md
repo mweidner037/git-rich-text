@@ -2,7 +2,7 @@
 
 Collaborative rich text editing over git, with conflict-free (GDocs-style) merging and cherry-picking.
 
-Made with [list-positions](https://github.com/mweidner037/list-positions#readme) / [list-formatting](https://github.com/mweidner037/list-formatting#readme), [Quill](https://quilljs.com/), and Electron.
+Made with [list-positions](https://github.com/mweidner037/list-positions#readme) / [@list-positions/formatting](https://github.com/mweidner037/list-positions-formatting#readme), [Quill](https://quilljs.com/), and Electron.
 
 ## Demos
 
@@ -28,7 +28,7 @@ The catch is that updates are being applied to a different state than they origi
 
 ![Applying an update that references an index may insert at the intuitively wrong index](./media/ot.png)
 
-Luckily, [list-positions](https://github.com/mweidner037/list-positions#readme) and [list-formatting](https://github.com/mweidner037/list-formatting#readme) let us define rich-text updates that do make sense, by borrowing ideas from [CRDTs](https://crdt.tech/).
+Luckily, [list-positions](https://github.com/mweidner037/list-positions#readme) and [@list-positions/formatting](https://github.com/mweidner037/list-positions-formatting#readme) let us define rich-text updates that do make sense, by borrowing ideas from [CRDTs](https://crdt.tech/).
 
 ### Cherry-Picking
 

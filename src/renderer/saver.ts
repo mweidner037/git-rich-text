@@ -1,5 +1,11 @@
-import { TimestampFormatting } from "list-formatting";
-import { BunchMeta, Order, Outline, Text } from "list-positions";
+import { TimestampFormatting } from "@list-positions/formatting";
+import {
+  BunchMeta,
+  Order,
+  Outline,
+  Text,
+  expandPositions,
+} from "list-positions";
 import { maybeRandomString } from "maybe-random-string";
 import { WrapperOp } from "./quill_wrapper";
 import { Update, UpdatePre } from "./updates";
@@ -39,7 +45,7 @@ export class Saver {
           this.pendingSets.set(op.startPos, op.chars);
           break;
         case "delete":
-          for (const pos of Order.startPosToArray(op.startPos, op.count ?? 1)) {
+          for (const pos of expandPositions(op.startPos, op.count ?? 1)) {
             if (this.pendingSets.has(pos)) {
               // Don't record the set at all.
               this.pendingSets.delete(pos);
